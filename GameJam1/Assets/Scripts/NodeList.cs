@@ -13,13 +13,14 @@ public class NodeList : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    public int NodeCount()
     {
-        
+        return nodes.Count;
     }
 
-    void OnDestroy()
+    public Transform GetNode(int i)
     {
-        AudioSource.PlayClipAtPoint(pop, Vector3.zero);
+        return nodes[i];
     }
+ 
 }

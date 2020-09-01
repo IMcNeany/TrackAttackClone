@@ -301,15 +301,14 @@ public class Player : MonoBehaviour
             }
             foreach (Transform t in m_laidTrack[m_laidTrack.Count - 1].GetComponent<NodeList>().nodes)
             {
-                path.Add(new Node(t.position.x, t.position.z));
+                //path.Add(new Node(t.position.x, t.position.z));
             }
             AudioSource.PlayClipAtPoint(placeSound, Vector3.zero, 5f);
 
 
             m_laidTrack[m_laidTrack.Count - 1].GetComponent<ChangeAltMaterial>().SetMaterials(m_altMaterial);
-        //  }
+        
 
-        // return result;
         return true;
     }
 

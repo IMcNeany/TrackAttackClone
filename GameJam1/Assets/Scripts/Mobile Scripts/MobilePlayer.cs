@@ -5,18 +5,19 @@ using UnityEngine.UI;
 
 public class MobilePlayer : MonoBehaviour
 {
-
+    
     private const int trailLength = 4;
 
     List<GameObject> m_laidTrack = new List<GameObject>();
     public GameObject player;
     public int m_goldCount = 0;
     public float speed = 3f;
+    public bool AI;
 
-
+    bool MovePlayer = false;
     bool m_colChecked = false;
     bool wallHit = false;
-    int pathIndex = 1;
+    int pathIndex = 0;
     int trailLengthCount = 0;
 
     public GameObject m_stashPrefab;
@@ -24,45 +25,62 @@ public class MobilePlayer : MonoBehaviour
     public GameObject m_straightTrackPrefab;
 
     List<GameObject> goldBars = new List<GameObject>();
-    public List<Node> path = new List<Node>();
+    private List<Node> path = new List<Node>();
     public GridManager grid;
     public GameObject stash;
     public TMPro.TextMeshProUGUI goldtext;
 
     public Node startingNode;
-   public Node currentNode;
+    public Node currentNode;
     Node nextNode;
 
-    PlayerDirection direction;
+   public PlayerDirection direction;
     PlayerDirection startDirection;
 
     PlayerControls controls;
-    int playerNumber = 1;
+    public int playerNumber;
 
     GameObject nextNodeCube;
+
+    private int goldscore;
+    private float timer;
+    public TMPro.TextMeshProUGUI highScore;
+    public MobileGameManager mobileGameManager;
 
     // Start is called before the first frame update
     void Start()
     {
-        //creates the square that shows where the track will be placed next
+       
+     //   highScore.text = PlayerPrefs.GetInt("HighScore", 0).ToString();
+ if(GetComponent<AI>())
+  {
+            AI = true;
+            GetComponent<AI>().enabled = true;
+            currentNode = grid.GetNode((int)transform.position.x, (int)transform.position.z);
+
+        }
+         currentNode = grid.GetNode((int)transform.position.x, (int)transform.position.z);
+
+         startingNode = currentNode;        //creates the square that shows where the track will be placed next
         player = this.gameObject;
         //  nextNodeCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
         //  nextNodeCube.transform.localScale = new Vector3(0.6f, 0.2f, 0.6f);
 
 
-       // stash = Instantiate(m_stashPrefab, player.transform.position, Quaternion.identity);
-       // stash.GetComponent<Stash>().manager = GameObject.FindGameObjectWithTag("Player").GetComponent<MobilePlayer>();
-       // stash.GetComponent<Stash>().id = playerNumber;
+        // stash = Instantiate(m_stashPrefab, player.transform.position, Quaternion.identity);
+        // stash.GetComponent<Stash>().manager = GameObject.FindGameObjectWithTag("Player").GetComponent<MobilePlayer>();
+        // stash.GetComponent<Stash>().id = playerNumber;
 
         foreach (Transform t in transform)
         {
             if (t.gameObject.name == "Gold")
-            {
+            { 
                 goldBars.Add(t.gameObject);
                 t.gameObject.SetActive(false);
             }
         }
-       // UpdateGoldCountText();
+
+        UpdateGoldCountText();
     }
 
     public void AssignPlayer(GameObject playerObj)
@@ -70,8 +88,10 @@ public class MobilePlayer : MonoBehaviour
         player = playerObj;
     }
 
-    public void Initialise(int _playerNumber, int startX, int startY, PlayerDirection dir)
+   
+  /*  public void Initialise(int _playerNumber, int startX, int startY, PlayerDirection dir)
     {
+
         //direction player is facing
         startDirection = dir;
         direction = dir;
@@ -107,7 +127,6 @@ public class MobilePlayer : MonoBehaviour
                 break;
             case PlayerDirection.RIGHT:
                 {
-                    Debug.Log("12345");
                     player.transform.rotation = Quaternion.Euler(0, 270, 0);
                 }
                 break;
@@ -123,28 +142,39 @@ public class MobilePlayer : MonoBehaviour
        // NextNodeHighlight();
     }
 
+       
+    }*/
+
 
     // Update is called once per frame
     void Update()
     {
-        Move();
+        if (MovePlayer) {
+            Move();
+        }
+
         CheckCrash();
        
     }
 
     void Move()
     {
+
         if (path.Count < 2)
         {
             return;
         }
         player.transform.LookAt(path[pathIndex].position);
         player.transform.position = Vector3.MoveTowards(player.transform.position, path[pathIndex].position, speed * Time.deltaTime);
+        
         if (player.transform.position == path[pathIndex].position)
         {
             pathIndex++;
 
             pathIndex = Mathf.Clamp(pathIndex, 0, path.Count - 1);
+            player.transform.LookAt(path[pathIndex].position);
+            player.transform.position = Vector3.MoveTowards(player.transform.position, path[pathIndex].position, speed * Time.deltaTime);
+
         }
     }
 
@@ -158,11 +188,24 @@ public class MobilePlayer : MonoBehaviour
 
     void NextNodeHighlight()
     {
-        nextNodeCube.transform.position = nextNode.position;
+       // nextNodeCube.transform.position = nextNode.position;
+        if (!AI)
+        {
+            nextNodeCube.transform.position = nextNode.position;
+        }
+    }
+    public void GameStart()
+    {
+        if (AI)
+        {
+            GetComponent<AI>().GameStarted = true;
+        }
     }
 
     public void LeftButtonPressed()
     {
+
+        MovePlayer = true;
         //check the trail length 
         trailLengthCount++;
         if (trailLengthCount > trailLength)
@@ -176,7 +219,6 @@ public class MobilePlayer : MonoBehaviour
             wallHit = true;
             return;
         }
-
        // NextNodeHighlight();
         switch (direction)
         {
@@ -213,13 +255,16 @@ public class MobilePlayer : MonoBehaviour
 
     public void StraightButtonPressed()
     {
+
+        MovePlayer = true;
+
         ////check the trail length 
         trailLengthCount++;
         if (trailLengthCount > trailLength)
         {
             TrailCut();
         }
-
+       
         //  if (wallHit) return;
         if (!grid.GetNextNode(currentNode, ref nextNode, direction))
         {
@@ -247,6 +292,9 @@ public class MobilePlayer : MonoBehaviour
 
     public void RightButtonPressed()
     {
+
+        MovePlayer = true;
+
         //check the trail length 
         trailLengthCount++;
         if (trailLengthCount > trailLength)
@@ -300,6 +348,7 @@ public class MobilePlayer : MonoBehaviour
 
     void TurnLeft()
     {
+
         direction--;
 
         if(direction < (PlayerDirection)0)
@@ -310,6 +359,7 @@ public class MobilePlayer : MonoBehaviour
 
     void TurnRight()
     {
+
         direction++;
 
         if (direction > (PlayerDirection)3)
@@ -328,12 +378,22 @@ public class MobilePlayer : MonoBehaviour
 
     void UpdateGoldCountText()
     {
-     //   goldtext.text = "Player " + playerNumber + " Gold: " + m_goldCount;
+        goldtext.text = "" + m_goldCount;
+        goldscore = int.Parse(goldtext.text);
+     /*   if (goldscore > PlayerPrefs.GetInt("HighScore", 0))
+        {
+            PlayerPrefs.SetInt("HighScore", goldscore);
+            highScore.text = goldtext.text;
+        }*/
     }
 
     public void Reset()
     {
         //destroy track
+        if (!gameObject.GetComponent<AI>())
+        {
+            Handheld.Vibrate();
+        }
         for (int i = 0; i < m_laidTrack.Count; ++i)
             Destroy(m_laidTrack[m_laidTrack.Count - 1 - i], i / 20.0f);
 
@@ -341,12 +401,12 @@ public class MobilePlayer : MonoBehaviour
         trailLengthCount = 0;
 
         //drop gold
-        while (m_goldCount > 0)
+        /*while (m_goldCount > 0)
         {
             Instantiate(grid.m_goldPrefab, new Vector3((int)transform.position.x, (int)transform.position.y, (int)transform.position.z), Quaternion.identity);
             m_goldCount--;
             UpdateGoldCountText();
-        }
+        }*/
         //clear list
         m_laidTrack.Clear();
 
@@ -372,7 +432,6 @@ public class MobilePlayer : MonoBehaviour
     //this needs to be on like aplyer script on the cart
     private void OnCollisionEnter(Collision collision)
     {
-        Debug.Log("collision");
         if (collision.gameObject.tag == "Gold")
         {
             Destroy(collision.gameObject);
@@ -381,6 +440,11 @@ public class MobilePlayer : MonoBehaviour
                 ++m_goldCount;
             UpdateGoldCountText();
             SetActiveGoldBars();
+          /*  timer = mobileGameManager.timeStart;
+            timer = timer + 5.0f;
+            mobileGameManager.timeStart = timer;*/
+
+            currentNode.GoldPickup = false;
 
             grid.SpawnGold();
         }

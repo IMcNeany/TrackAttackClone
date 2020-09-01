@@ -1,7 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 using UnityEngine;
+using TMPro;
 
 
 public class MobileGameManager : MonoBehaviour
@@ -9,9 +11,10 @@ public class MobileGameManager : MonoBehaviour
     public Material m_transitionMaterial;
     public GameObject playerPrefab;
     public GameObject otherPlayerPrefab;
+    public List<GameObject> players;
     public MobilePlayer mobilePlayer;
     public GridManager grid;
-    public int players = 2;
+    //public int players = 2;
     public AudioClip[] menuMusic;
     public AudioClip[] gameMusic;
     AudioSource audioPlayer;
@@ -20,13 +23,16 @@ public class MobileGameManager : MonoBehaviour
     public List<Material> m_altMaterials = new List<Material>();
     public List<direction> m_playerDirections = new List<direction>();
     public float timeStart = 60;
+    public float gameLength;
     public float restartTime = 2f;
     public TMPro.TextMeshProUGUI countdown;
+    public Image progressBar;
     public GameObject resultsUI;
     public TMPro.TextMeshProUGUI victor;
 
     private bool m_gameStarting = false;
     private bool gameHasEnded = false;
+    public GameObject canvas;
 
     // Start is called before the first frame update
     void Awake()
@@ -37,9 +43,12 @@ public class MobileGameManager : MonoBehaviour
 
     void Start()
     {
-       // grid = GetComponent<GridManager>();
+        // grid = GetComponent<GridManager>();
         //This needs to pass in No of players got from serverside and player No
-        InstantiatePlayers(1,1);
+        //  InstantiatePlayers(3,1);
+        AssignPlayerNumbers();
+
+        gameLength = timeStart;
         countdown.text = timeStart.ToString();
 
     }
@@ -49,13 +58,22 @@ public class MobileGameManager : MonoBehaviour
     {
         timeStart -= Time.deltaTime;
         countdown.text = Mathf.Round(timeStart).ToString();
-        if (timeStart <= 0)
+        progressBar.fillAmount = timeStart/gameLength;
+        if ((timeStart <= 0))
         {
-            EndGame(mobilePlayer.m_goldCount,0,0,0);
+           EndGame(mobilePlayer.m_goldCount, 0, 0, 0);
         }
     }
 
-    void InstantiatePlayers(int noPlayers, int playerNo)
+    void AssignPlayerNumbers()
+    {
+        for(int i = 0; i < players.Count; i++)
+        {
+            players[i].GetComponent<MobilePlayer>().playerNumber = i + 1;
+        }
+    }
+
+  /*  void InstantiatePlayers(int noPlayers, int playerNo)
     {
         foreach (MobileGameManager gm in FindObjectsOfType<MobileGameManager>())
         {
@@ -234,7 +252,7 @@ public class MobileGameManager : MonoBehaviour
         }
         
  
-    }
+    }*/
 
 
 
@@ -248,17 +266,16 @@ public class MobileGameManager : MonoBehaviour
 
             int winner = Mathf.Max(Mathf.Max(Mathf.Max(player1Gold, player2Gold), player3Gold), player4Gold);
 
-            Debug.Log("the winner with [ " + winner + " ] gold is! ");
 
             if (winner == player1Gold)
             {
                 if (winner != player2Gold && winner != player3Gold && winner != player4Gold)
                 {
-                    victor.text = "Player 1 Wins";
+                    victor.text = "You Win!";
                 }
                 else
                 {
-                    victor.text = "Draw";
+                    victor.text = "You Lose!";
                 }
             }
             else if (winner == player2Gold)
@@ -295,7 +312,7 @@ public class MobileGameManager : MonoBehaviour
                 }
             }
 
-            Invoke("Restart", restartTime);
+            //Invoke("Restart", restartTime);
         }
 
     }
@@ -304,6 +321,5 @@ public class MobileGameManager : MonoBehaviour
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
-
 }
 
